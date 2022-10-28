@@ -519,7 +519,6 @@ private:
 	bool _mag_bias_observable{false};	///< true when there is enough rotation to make magnetometer bias errors observable
 	bool _yaw_angle_observable{false};	///< true when there is enough horizontal acceleration to make yaw observable
 	uint64_t _time_yaw_started{0};		///< last system time in usec that a yaw rotation manoeuvre was detected
-	uint8_t _num_bad_flight_yaw_events{0};	///< number of times a bad heading has been detected in flight and required a yaw reset
 	uint64_t _mag_use_not_inhibit_us{0};	///< last system time in usec before magnetometer use was inhibited
 	float _last_static_yaw{NAN};		///< last yaw angle recorded when on ground motion checks were passing (rad)
 
@@ -696,20 +695,20 @@ private:
 	// fuse single velocity and position measurement
 	bool fuseVelPosHeight(const float innov, const float innov_var, const int obs_index);
 
-	void resetVelocityTo(const Vector3f &vel);
-	void resetHorizontalVelocityTo(const Vector2f &new_horz_vel);
-	void resetVerticalVelocityTo(float new_vert_vel, float new_vert_vel_var = NAN);
+	void resetVelocityTo(const Vector3f &vel, const Vector3f &new_vel_var);
 
-	void resetVelocityToGps(const gpsSample &gps_sample);
-	void resetHorizontalVelocityToOpticalFlow(const flowSample &flow_sample);
+	void resetHorizontalVelocityTo(const Vector2f &new_horz_vel, const Vector2f &new_horz_vel_var);
+	void resetHorizontalVelocityTo(const Vector2f &new_horz_vel, float vel_var) { resetHorizontalVelocityTo(new_horz_vel, Vector2f(vel_var, vel_var)); }
+
 	void resetVelocityToVision();
 	void resetHorizontalVelocityToZero();
 
-	void resetHorizontalPositionToGps(const gpsSample &gps_sample);
+	void resetVerticalVelocityTo(float new_vert_vel, float new_vert_vel_var);
 	void resetHorizontalPositionToVision();
-	void resetHorizontalPositionToOpticalFlow();
 	void resetHorizontalPositionToLastKnown();
-	void resetHorizontalPositionTo(const Vector2f &new_horz_pos);
+
+	void resetHorizontalPositionTo(const Vector2f &new_horz_pos, const Vector2f &new_horz_pos_var);
+	void resetHorizontalPositionTo(const Vector2f &new_horz_pos, const float pos_var = NAN) { resetHorizontalPositionTo(new_horz_pos, Vector2f(pos_var, pos_var)); }
 
 	bool isHeightResetRequired() const;
 
@@ -775,10 +774,6 @@ private:
 	// reset the heading using the external vision measurements
 	// return true if successful
 	bool resetYawToEv();
-
-	// Do a forced re-alignment of the yaw angle to align with the horizontal velocity vector from the GPS.
-	// It is used to align the yaw angle after launch or takeoff for fixed wing vehicle.
-	bool realignYawGPS(const Vector3f &mag);
 
 	// Return the magnetic declination in radians to be used by the alignment and fusion processing
 	float getMagDeclination();
@@ -899,7 +894,7 @@ private:
 
 	void runOnGroundYawReset();
 	bool canResetMagHeading() const;
-	void runInAirYawReset(const Vector3f &mag);
+	void runInAirYawReset();
 
 	void selectMagAuto();
 	void check3DMagFusionSuitability();
@@ -1030,7 +1025,6 @@ private:
 	void startAirspeedFusion();
 	void stopAirspeedFusion();
 
-	void startGpsFusion(const gpsSample &gps_sample);
 	void stopGpsFusion();
 	void stopGpsPosFusion();
 	void stopGpsVelFusion();

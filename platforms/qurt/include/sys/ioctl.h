@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2014 PX4 Development Team. All rights reserved.
+ * Copyright (C) 2022 ModalAI, Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,53 +30,16 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
-/**
- * @file navigator_mode.h
- *
- * Base class for different modes in navigator
- *
- * @author Julian Oes <julian@oes.ch>
- * @author Anton Babushkin <anton.babushkin@me.com>
- */
+
+// This file is meant to tackle the dependencies on IOCTL found in PX4.
+// As QURT does not have IOCTL natively, this file exists to define those
+// functions/params found throughout the code base.
 
 #pragma once
 
-class Navigator;
+#define	IOCPARM_MASK	0x1fff		/* parameter length, at most 13 bits */
+#define	IOC_VOID	0x20000000	/* no parameters */
 
-class NavigatorMode
-{
-public:
-	NavigatorMode(Navigator *navigator);
-	virtual ~NavigatorMode() = default;
-	NavigatorMode(const NavigatorMode &) = delete;
-	NavigatorMode &operator=(const NavigatorMode &) = delete;
-	virtual void initialize() = 0;
-
-	void run(bool active);
-
-	/**
-	 * This function is called while the mode is inactive
-	 */
-	virtual void on_inactive();
-
-	/**
-	 * This function is called one time when mode becomes active, pos_sp_triplet must be initialized here
-	 */
-	virtual void on_activation();
-
-	/**
-	 * This function is called one time when mode becomes inactive
-	 */
-	virtual void on_inactivation();
-
-	/**
-	 * This function is called while the mode is active
-	 */
-	virtual void on_active();
-
-protected:
-	Navigator *_navigator{nullptr};
-
-private:
-	bool _active{false};
-};
+#define	_IOC(inout,group,num,len)	((unsigned long) \
+		((inout) | (((len) & IOCPARM_MASK) << 16) | ((group) << 8) | (num)))
+#define	_IO(g,n)	_IOC(IOC_VOID,	(g), (n), 0)

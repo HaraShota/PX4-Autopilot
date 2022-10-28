@@ -88,6 +88,13 @@ Navigator::Navigator() :
 	_navigation_mode_array[5] = &_precland;
 	_navigation_mode_array[6] = &_vtol_takeoff;
 
+	/* iterate through navigation modes and initialize _mission_item for each */
+	for (unsigned int i = 0; i < NAVIGATOR_MODE_ARRAY_SIZE; i++) {
+		if (_navigation_mode_array[i]) {
+			_navigation_mode_array[i]->initialize();
+		}
+	}
+
 	_handle_back_trans_dec_mss = param_find("VT_B_DEC_MSS");
 	_handle_reverse_delay = param_find("VT_B_REV_DEL");
 
@@ -337,7 +344,7 @@ void Navigator::run()
 					}
 
 					if (only_alt_change_requested) {
-						if (PX4_ISFINITE(curr->current.loiter_radius) && curr->current.loiter_radius > 0) {
+						if (PX4_ISFINITE(curr->current.loiter_radius) && curr->current.loiter_radius > FLT_EPSILON) {
 							rep->current.loiter_radius = curr->current.loiter_radius;
 
 
@@ -552,12 +559,6 @@ void Navigator::run()
 				// reset cruise speed and throttle to default when transitioning (VTOL Takeoff handles it separately)
 				reset_cruising_speed();
 				set_cruising_throttle();
-
-				// need to update current setpooint with reset cruise speed and throttle
-				position_setpoint_triplet_s *rep = get_reposition_triplet();
-				*rep = *(get_position_setpoint_triplet());
-				rep->current.cruising_speed = get_cruising_speed();
-				rep->current.cruising_throttle = get_cruising_throttle();
 			}
 		}
 
